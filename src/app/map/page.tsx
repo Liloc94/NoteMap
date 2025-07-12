@@ -2,9 +2,6 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 
-// 타입 정의 import
-import "../types/kakao";
-
 // 카카오맵 API 타입
 type KakaoMap = any;
 type KakaoMarker = any;
