@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 
-// 전역 kakao 객체 타입 선언
-declare global {
-  interface Window {
-    kakao: any;
-  }
-}
+// 타입 정의 import
+import "../types/kakao";
+
+// 카카오맵 API 타입
+type KakaoMap = any;
+type KakaoMarker = any;
 
 interface PinData {
   id: string;
@@ -24,8 +24,8 @@ export default function KakaoMapPins() {
   const [selectedPin, setSelectedPin] = useState<PinData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
-  const [map, setMap] = useState<any>(null);
-  const [markers, setMarkers] = useState<any[]>([]);
+  const [map, setMap] = useState<KakaoMap | null>(null);
+  const [markers, setMarkers] = useState<KakaoMarker[]>([]);
 
   // 폼 상태
   const [formData, setFormData] = useState({
@@ -73,12 +73,8 @@ export default function KakaoMapPins() {
     };
   }, []);
 
-  // 마커 업데이트
-  useEffect(() => {
-    updateMarkers();
-  }, [pins, map]);
-
-  const updateMarkers = () => {
+  // 마커 업데이트 함수를 useCallback으로 메모이제이션
+  const updateMarkers = useCallback(() => {
     if (!map || !window.kakao) return;
 
     // 기존 마커 제거
@@ -103,7 +99,12 @@ export default function KakaoMapPins() {
     });
 
     setMarkers(newMarkers);
-  };
+  }, [map, markers, pins]);
+
+  // 마커 업데이트
+  useEffect(() => {
+    updateMarkers();
+  }, [updateMarkers]);
 
   const handleMapClick = (lat: number, lng: number) => {
     setFormData({ title: "", description: "" });
