@@ -32,33 +32,28 @@ export default function KakaoMapPins() {
 
   // 카카오맵 API 로드
   useEffect(() => {
+    // 이미 로드된 경우 스킵
+    if (window.kakao) {
+      initializeMap();
+      return;
+    }
+
     const script = document.createElement("script");
-    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=f93df912f4da359d22fdbee76fd68264&autoload=false`;
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=1d942b3f6295cca93ee7c47e9942e78b&autoload=false`;
     script.async = true;
+    script.type = "text/javascript";
+    // CORS 우회를 위해 crossOrigin 제거
 
     script.onload = () => {
-      window.kakao.maps.load(() => {
-        if (mapRef.current) {
-          const options = {
-            center: new window.kakao.maps.LatLng(37.566826, 126.9786567),
-            level: 3,
-          };
+      if (window.kakao) {
+        window.kakao.maps.load(() => {
+          initializeMap();
+        });
+      }
+    };
 
-          const kakaoMap = new window.kakao.maps.Map(mapRef.current, options);
-          setMap(kakaoMap);
-          setIsMapLoaded(true);
-
-          // 지도 클릭 이벤트
-          window.kakao.maps.event.addListener(
-            kakaoMap,
-            "click",
-            (mouseEvent: any) => {
-              const latLng = mouseEvent.latLng;
-              handleMapClick(latLng.getLat(), latLng.getLng());
-            }
-          );
-        }
-      });
+    script.onerror = () => {
+      console.error("카카오맵 SDK 로드 실패");
     };
 
     document.head.appendChild(script);
@@ -69,6 +64,29 @@ export default function KakaoMapPins() {
       }
     };
   }, []);
+
+  const initializeMap = () => {
+    if (!mapRef.current || !window.kakao) return;
+
+    const options = {
+      center: new window.kakao.maps.LatLng(37.566826, 126.9786567),
+      level: 3,
+    };
+
+    const kakaoMap = new window.kakao.maps.Map(mapRef.current, options);
+    setMap(kakaoMap);
+    setIsMapLoaded(true);
+
+    // 지도 클릭 이벤트
+    window.kakao.maps.event.addListener(
+      kakaoMap,
+      "click",
+      (mouseEvent: any) => {
+        const latLng = mouseEvent.latLng;
+        handleMapClick(latLng.getLat(), latLng.getLng());
+      }
+    );
+  };
 
   // 마커 업데이트 함수를 useCallback으로 메모이제이션
   const updateMarkers = useCallback(() => {
@@ -96,12 +114,14 @@ export default function KakaoMapPins() {
     });
 
     setMarkers(newMarkers);
-  }, [map, markers, pins]);
+  }, [map, pins]); // markers 의존성 제거
 
   // 마커 업데이트
   useEffect(() => {
-    updateMarkers();
-  }, [updateMarkers]);
+    if (map && pins.length >= 0) {
+      updateMarkers();
+    }
+  }, [map, pins, updateMarkers]);
 
   const handleMapClick = (lat: number, lng: number) => {
     setFormData({ title: "", description: "" });
@@ -369,7 +389,9 @@ export default function KakaoMapPins() {
               maxWidth: "90vw",
             }}
           >
-            <h2 style={{ marginBottom: "20px" }}>핀 정보 입력</h2>
+            <h2 style={{ marginBottom: "20px", fontSize: "18px" }}>
+              핀 정보 입력
+            </h2>
 
             <div style={{ marginBottom: "16px" }}>
               <label
@@ -431,7 +453,9 @@ export default function KakaoMapPins() {
                 style={{
                   marginBottom: "20px",
                   fontSize: "12px",
-                  color: "#666",
+                  backgroundColor: "#f8f9fa",
+                  padding: "8px",
+                  borderRadius: "4px",
                 }}
               >
                 위치: {selectedPin.lat.toFixed(6)}, {selectedPin.lng.toFixed(6)}
