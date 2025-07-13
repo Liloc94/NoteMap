@@ -1,28 +1,21 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { PropertyData } from "../../types/marker";
 
 // 카카오맵 API 타입
 type KakaoMap = any;
 type KakaoMarker = any;
 
-interface PinData {
-  id: string;
-  lat: number;
-  lng: number;
-  title: string;
-  description: string;
-  createdAt: string;
-}
-
 export default function KakaoMapPins() {
   const mapRef = useRef<HTMLDivElement>(null);
-  const [pins, setPins] = useState<PinData[]>([]);
-  const [selectedPin, setSelectedPin] = useState<PinData | null>(null);
+  const [pins, setPins] = useState<PropertyData[]>([]);
+  const [selectedPin, setSelectedPin] = useState<PropertyData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
   const [map, setMap] = useState<KakaoMap | null>(null);
   const [markers, setMarkers] = useState<KakaoMarker[]>([]);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   // 폼 상태
   const [formData, setFormData] = useState({
@@ -52,8 +45,11 @@ export default function KakaoMapPins() {
       }
     };
 
-    script.onerror = () => {
-      console.error("카카오맵 SDK 로드 실패");
+    script.onerror = (error) => {
+      console.error("카카오맵 SDK 로드 실패:", error);
+      alert(
+        "카카오맵을 로드할 수 없습니다. API 키와 도메인 설정을 확인해주세요."
+      );
     };
 
     document.head.appendChild(script);
@@ -131,6 +127,8 @@ export default function KakaoMapPins() {
       lng,
       title: "",
       description: "",
+      roomType: "1room",
+      hasTerrace: false,
       createdAt: new Date().toISOString(),
     });
     setIsModalOpen(true);
@@ -139,7 +137,7 @@ export default function KakaoMapPins() {
   const handleSavePin = () => {
     if (!selectedPin) return;
 
-    const newPin: PinData = {
+    const newPin: PropertyData = {
       ...selectedPin,
       ...formData,
       createdAt: selectedPin.createdAt || new Date().toISOString(),
@@ -169,20 +167,74 @@ export default function KakaoMapPins() {
         display: "flex",
         height: "100vh",
         fontFamily: "Arial, sans-serif",
+        position: "relative",
       }}
     >
+      {/* 모바일 메뉴 버튼 */}
+      <button
+        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+        className="mobile-menu-btn"
+        style={{
+          position: "fixed",
+          top: "10px",
+          left: "10px",
+          zIndex: 1001,
+          padding: "8px 12px",
+          backgroundColor: "#007bff",
+          color: "white",
+          border: "none",
+          borderRadius: "4px",
+          cursor: "pointer",
+          display: "none",
+        }}
+      >
+        ☰
+      </button>
+
       {/* 사이드바 */}
       <div
+        className="sidebar"
         style={{
           width: "300px",
           borderRight: "1px solid #ddd",
           padding: "20px",
           backgroundColor: "#f9f9f9",
+          height: "100vh",
+          overflowY: "auto",
+          position: "fixed",
+          left: 0,
+          top: 0,
+          zIndex: 1000,
+          transform: isSidebarOpen ? "translateX(0)" : "translateX(-100%)",
+          transition: "transform 0.3s ease",
         }}
       >
-        <h1 style={{ fontSize: "20px", marginBottom: "20px" }}>
-          📍 지도 핀 관리
-        </h1>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "20px",
+          }}
+        >
+          <h1 style={{ fontSize: "20px", margin: 0 }}>📍 지도 핀 관리</h1>
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            className="sidebar-close-btn"
+            style={{
+              display: "none",
+              padding: "4px 8px",
+              backgroundColor: "#6c757d",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+            }}
+          >
+            ✕
+          </button>
+        </div>
+
         <p style={{ fontSize: "14px", color: "#666", marginBottom: "20px" }}>
           지도를 클릭하여 핀을 추가하세요
         </p>
@@ -241,9 +293,18 @@ export default function KakaoMapPins() {
       </div>
 
       {/* 메인 컨텐츠 */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+      <div
+        className="main-content"
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          marginLeft: "300px",
+        }}
+      >
         {/* 상단 툴바 */}
         <div
+          className="toolbar"
           style={{
             padding: "16px",
             borderBottom: "1px solid #ddd",
@@ -255,22 +316,25 @@ export default function KakaoMapPins() {
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
+              flexWrap: "wrap",
+              gap: "8px",
             }}
           >
-            <div>
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
               <button
                 onClick={() =>
                   map && map.setLevel(Math.max(map.getLevel() - 1, 1))
                 }
                 disabled={!map}
+                className="toolbar-buttons"
                 style={{
                   padding: "8px 12px",
-                  marginRight: "8px",
                   backgroundColor: "#007bff",
                   color: "white",
                   border: "none",
                   borderRadius: "4px",
                   cursor: "pointer",
+                  fontSize: "14px",
                 }}
               >
                 확대
@@ -280,6 +344,7 @@ export default function KakaoMapPins() {
                   map && map.setLevel(Math.min(map.getLevel() + 1, 14))
                 }
                 disabled={!map}
+                className="toolbar-buttons"
                 style={{
                   padding: "8px 12px",
                   backgroundColor: "#007bff",
@@ -287,11 +352,18 @@ export default function KakaoMapPins() {
                   border: "none",
                   borderRadius: "4px",
                   cursor: "pointer",
+                  fontSize: "14px",
                 }}
               >
                 축소
               </button>
-              <span style={{ marginLeft: "16px", fontSize: "14px" }}>
+              <span
+                className="toolbar-level"
+                style={{
+                  marginLeft: "16px",
+                  fontSize: "14px",
+                }}
+              >
                 레벨: {map ? map.getLevel() : 3}
               </span>
             </div>
@@ -326,17 +398,26 @@ export default function KakaoMapPins() {
         {/* 선택된 핀 정보 */}
         {selectedPin && !isModalOpen && (
           <div
+            className="pin-info"
             style={{
               padding: "20px",
               borderTop: "1px solid #ddd",
               backgroundColor: "#fff",
             }}
           >
-            <h3>{selectedPin.title || "제목 없음"}</h3>
+            <h3
+              style={{
+                marginBottom: "8px",
+              }}
+            >
+              {selectedPin.title || "제목 없음"}
+            </h3>
             <p style={{ color: "#666", marginBottom: "8px" }}>
               {selectedPin.description || "설명 없음"}
             </p>
-            <p style={{ fontSize: "12px", color: "#888" }}>
+            <p
+              style={{ fontSize: "12px", color: "#888", marginBottom: "12px" }}
+            >
               위치: {selectedPin.lat.toFixed(6)}, {selectedPin.lng.toFixed(6)} |
               생성일: {new Date(selectedPin.createdAt).toLocaleString()}
             </p>
@@ -349,13 +430,13 @@ export default function KakaoMapPins() {
                 setIsModalOpen(true);
               }}
               style={{
-                marginTop: "12px",
                 padding: "8px 16px",
                 backgroundColor: "#28a745",
                 color: "white",
                 border: "none",
                 borderRadius: "4px",
                 cursor: "pointer",
+                fontSize: "14px",
               }}
             >
               편집
@@ -378,18 +459,28 @@ export default function KakaoMapPins() {
             alignItems: "center",
             justifyContent: "center",
             zIndex: 1000,
+            padding: "20px",
           }}
         >
           <div
+            className="modal-content"
             style={{
               backgroundColor: "white",
               padding: "24px",
               borderRadius: "8px",
               width: "400px",
               maxWidth: "90vw",
+              maxHeight: "80vh",
+              overflowY: "auto",
             }}
           >
-            <h2 style={{ marginBottom: "20px", fontSize: "18px" }}>
+            <h2
+              className="modal-title"
+              style={{
+                marginBottom: "20px",
+                fontSize: "18px",
+              }}
+            >
               핀 정보 입력
             </h2>
 
@@ -399,6 +490,7 @@ export default function KakaoMapPins() {
                   display: "block",
                   marginBottom: "4px",
                   fontWeight: "bold",
+                  fontSize: "14px",
                 }}
               >
                 제목
@@ -416,6 +508,7 @@ export default function KakaoMapPins() {
                   border: "1px solid #ddd",
                   borderRadius: "4px",
                   fontSize: "14px",
+                  boxSizing: "border-box",
                 }}
               />
             </div>
@@ -426,6 +519,7 @@ export default function KakaoMapPins() {
                   display: "block",
                   marginBottom: "4px",
                   fontWeight: "bold",
+                  fontSize: "14px",
                 }}
               >
                 설명
@@ -444,6 +538,7 @@ export default function KakaoMapPins() {
                   borderRadius: "4px",
                   fontSize: "14px",
                   resize: "vertical",
+                  boxSizing: "border-box",
                 }}
               />
             </div>
@@ -467,6 +562,7 @@ export default function KakaoMapPins() {
                 display: "flex",
                 gap: "8px",
                 justifyContent: "flex-end",
+                flexWrap: "wrap",
               }}
             >
               <button
@@ -474,6 +570,7 @@ export default function KakaoMapPins() {
                   setIsModalOpen(false);
                   setSelectedPin(null);
                 }}
+                className="modal-buttons"
                 style={{
                   padding: "8px 16px",
                   backgroundColor: "#6c757d",
@@ -481,12 +578,14 @@ export default function KakaoMapPins() {
                   border: "none",
                   borderRadius: "4px",
                   cursor: "pointer",
+                  fontSize: "14px",
                 }}
               >
                 취소
               </button>
               <button
                 onClick={handleSavePin}
+                className="modal-buttons"
                 style={{
                   padding: "8px 16px",
                   backgroundColor: "#007bff",
@@ -494,6 +593,7 @@ export default function KakaoMapPins() {
                   border: "none",
                   borderRadius: "4px",
                   cursor: "pointer",
+                  fontSize: "14px",
                 }}
               >
                 저장
@@ -501,6 +601,24 @@ export default function KakaoMapPins() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* 모바일에서 사이드바가 열려있을 때 배경 오버레이 */}
+      {isSidebarOpen && (
+        <div
+          className="overlay"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            zIndex: 999,
+            display: "none",
+          }}
+          onClick={() => setIsSidebarOpen(false)}
+        />
       )}
     </div>
   );

@@ -1,4 +1,5 @@
-@import "tailwindcss";
+@import "tailwindcss/preflight";
+@tailwind utilities;
 
 :root {
   --background: #ffffff;
@@ -31,7 +32,9 @@ body {
 }
 
 /* 입력 필드 글자색 */
-input, textarea, select {
+input,
+textarea,
+select {
   color: #333 !important;
 }
 
@@ -41,7 +44,12 @@ label {
 }
 
 /* 제목 글자색 */
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   color: #333 !important;
 }
 
@@ -53,4 +61,88 @@ button {
 /* 링크 글자색 */
 a {
   color: inherit;
+}
+
+/* 반응형 스타일 */
+@media (max-width: 768px) {
+  .mobile-menu-btn {
+    display: block !important;
+  }
+
+  .sidebar {
+    width: 280px !important;
+    padding: 15px !important;
+  }
+
+  .sidebar-close-btn {
+    display: block !important;
+  }
+
+  .main-content {
+    margin-left: 0 !important;
+  }
+
+  .toolbar {
+    padding: 12px !important;
+    margin-top: 50px !important;
+  }
+
+  .pin-info {
+    padding: 15px !important;
+  }
+
+  .pin-info h3 {
+    font-size: 16px !important;
+  }
+
+  .overlay {
+    display: block !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .sidebar {
+    position: relative !important;
+    transform: none !important;
+  }
+
+  .mobile-menu-btn {
+    display: none !important;
+  }
+
+  .sidebar-close-btn {
+    display: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .toolbar-buttons {
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+  }
+
+  .toolbar-level {
+    font-size: 12px !important;
+    margin-left: 8px !important;
+  }
+
+  .pin-info button {
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+  }
+
+  .modal-content {
+    padding: 16px !important;
+    width: 100% !important;
+  }
+
+  .modal-title {
+    font-size: 16px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .modal-buttons {
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+  }
 }
